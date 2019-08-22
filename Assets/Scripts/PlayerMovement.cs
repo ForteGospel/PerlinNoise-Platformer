@@ -25,7 +25,7 @@ public class PlayerMovement : MonoBehaviour
 
         animator.SetFloat("Speed", Mathf.Abs(horizontal));
 
-        if (Input.GetButton("Jump"))
+        if (Input.GetButton("Jump") && !Input.GetButton("Attack"))
         {
             jump = true;
             animator.SetBool("Jump", true);
@@ -37,6 +37,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (Input.GetButtonDown("Attack"))
         {
+            if (animator.GetBool("Jump"))
+                animator.SetBool("Jump", false);
             animator.SetTrigger("Attack");
         }
     }
