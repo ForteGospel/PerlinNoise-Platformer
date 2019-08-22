@@ -34,6 +34,11 @@ public class PlayerMovement : MonoBehaviour
         {
             jump = false;
         }
+
+        if (Input.GetButtonDown("Attack"))
+        {
+            animator.SetTrigger("Attack");
+        }
     }
 
     public void OnLanding()
