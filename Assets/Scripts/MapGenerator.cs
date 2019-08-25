@@ -12,15 +12,31 @@ public class MapGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        foreach(Tilemap tilemap in Tilemaps)
-        {
-            int[,] cords = new int[x, y];
-            int[,] map = RandomWalkTopSmoothed(cords, Random.Range(1.0f, 1000.0f), Random.Range(1, 3));
-            RenderMap(map, tilemap, tile);
-            UpdateMap(map, tilemap);
-        }
-        
+        int startingPoint = 5;
+        //foreach(Tilemap tilemap in Tilemaps)
+        //{
+        //    int[,] cords = new int[x, y];
+        //    int[,] map = RandomWalkTopSmoothed(cords, Random.Range(1.0f, 1000.0f), Random.Range(1, 3),startingPoint);
+        //    RenderMap(map, tilemap, tile);
+        //    UpdateMap(map, tilemap);
+        //    startingPoint = getLastHeight(map);
+        //}
 
+        int[,] cords = new int[x, y];
+        int[,] map = RandomPerlinNoise(cords, 0.15f);
+
+        RenderMap(map, Tilemaps[0], tile);
+        UpdateMap(map, Tilemaps[0]);
+    }
+
+    private int getLastHeight(int [,] lastrow)
+    {
+        for (int y = lastrow.GetUpperBound(1); y >= 0; y--)
+        {
+            if (lastrow[x - 1, y] == 1)
+                return y;
+        }
+        return 0;
     }
 
     public static void RenderMap(int[,] map, Tilemap tilemap, TileBase tile)
@@ -58,47 +74,66 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    public static int[,] RandomWalkTopSmoothed(int[,] map, float seed, int minSectionWidth)
+    public static int [,] RandomPerlinNoise(int [,] map, float scale)
     {
-    //Seed our random
-    System.Random rand = new System.Random(seed.GetHashCode());
-
-    //Determine the start position
-    int lastHeight = Random.Range(0, map.GetUpperBound(1));
-
-    //Used to determine which direction to go
-    int nextMove = 0;
-    //Used to keep track of the current sections width
-    int sectionWidth = 0;
-
-    //Work through the array width
-    for (int x = 0; x <= map.GetUpperBound(0); x++)
-    {
-        //Determine the next move
-        nextMove = rand.Next(2);
-
-        //Only change the height if we have used the current height more than the minimum required section width
-        if (nextMove == 0 && lastHeight > 0 && sectionWidth > minSectionWidth)
+        int newPoint;
+        float modifier = Random.Range(0f,10f);
+        for (int i = 0; i < map.GetUpperBound(0); i++)
         {
-            lastHeight--;
-            sectionWidth = 0;
+            for (int j = 0; j < map.GetUpperBound(1); j++)
+            {
+                float x = (j + modifier) * scale;
+                float y = (i + modifier) * scale;
+                newPoint = Mathf.RoundToInt(Mathf.PerlinNoise(x, y));
+                map[i, j] = newPoint;
+            }
         }
-        else if (nextMove == 1 && lastHeight < map.GetUpperBound(1) && sectionWidth > minSectionWidth)
-        {
-            lastHeight++;
-            sectionWidth = 0;
-        }
-        //Increment the section width
-        sectionWidth++;
-
-        //Work our way from the height down to 0
-        for (int y = lastHeight; y >= 0; y--)
-        {
-            map[x, y] = 1;
-        }
+        return map;
     }
 
-    //Return the modified map
-    return map;
+    public static int[,] RandomWalkTopSmoothed(int[,] map, float seed, int minSectionWidth, int startingHeight)
+    {
+    //Seed our random
+        System.Random rand = new System.Random(seed.GetHashCode());
+
+    //Determine the start position
+        int lastHeight = startingHeight;
+        int currentHeight = startingHeight;
+
+    //Used to determine which direction to go
+        int nextMove = 0;
+    //Used to keep track of the current sections width
+        int sectionWidth = 0;
+
+    //Work through the array width
+        for (int x = 0; x <= map.GetUpperBound(0); x+= minSectionWidth)
+        {
+            //Determine the next move
+            nextMove = rand.Next(3);
+
+            if (nextMove == 0 && lastHeight > 0)
+                currentHeight = --lastHeight;
+            else if (nextMove == 1 && lastHeight < map.GetUpperBound(1))
+                currentHeight = ++lastHeight;
+            else if (nextMove == 2 && currentHeight != -1)
+                currentHeight = -1;
+            ////sectionWidth++;
+
+            for (int currentX = 0; currentX <= minSectionWidth; currentX++)
+            {
+                if (x + currentX <= map.GetUpperBound(0))
+                {
+                    for (int y = currentHeight; y >= 0; y--)
+                    {
+                        map[x + currentX, y] = 1;
+                    }
+                }
+            }
+            //Work our way from the height down to 0
+            
+        }
+
+        //Return the modified map
+        return map;
     }
 }
